@@ -1,16 +1,16 @@
 Arduino snake
 a simple snake game i made to learn how the 8 x 12 led matrix worked.
 
-Game modes
-// 0 - none
-// 1 - no warp
-// 2 - teleport
-// 3 - inverse
-// 4 - c apples
-// 5 - 1d6 apples
-// 6 - chese
-// 7 - hot dog
+Game modes: <br>
+// 0 - none <br>
+// 1 - no warp <br>
+// 2 - teleport <br>
+// 3 - inverse <br>
+// 4 - c apples <br>
+// 5 - 1d6 apples <br>
+// 6 - chese <br>
+// 7 - hot dog <br>
 
-credits:
-made by me
-made for stardance
+credits: <br>
+made by me <br>
+made for stardance <br>
