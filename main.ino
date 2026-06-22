@@ -5,11 +5,9 @@ ArduinoLEDMatrix matrix;
 
 byte frame[8][12] = {0};
 
-unsigned long lastMoveTime = 0;
-const int gameSpeed = 250; 
+unsigned long lastMoveTime = 0; 
 
 int body[MAX_LENGTH][2]; 
-int apple[2][2];
 const int btnUp = 3;
 const int btnDown = 2;
 const int btnLeft = 5;
@@ -19,7 +17,7 @@ int dir = 3;
 int nextDir = 3; 
 int length = 3;
 
-int gameMode = 5;
+int gameMode = 4;
 // 0 - none
 // 1 - no warp
 // 2 - teleport
@@ -28,6 +26,11 @@ int gameMode = 5;
 // 5 - 1d6 apples
 // 6 - chese
 // 7 - hot dog
+const int gameSpeed = 250; // less is faster
+
+const int c = 5;
+int apple[6][2]; 
+int activeApples = 1;
 
 void refreshMatrix() {
   uint32_t renderBuffer[3] = {0, 0, 0};
@@ -54,24 +57,40 @@ void clear() {
   memset(frame, 0, sizeof(frame));
 }
 
-void spawnApple() {
-  for (int a = 0; a < (gameMode == 2 ? 2 : 1); a++) {
-    bool onBody;
-    do {
-      onBody = false;
-      apple[a][0] = random(0, 12); 
-      apple[a][1] = random(0, 8);
-      
-      for (int i = 0; i < length; i++) {
-        if (body[i][0] == apple[a][0] && body[i][1] == apple[a][1]) {
-          onBody = true;
-          break;
-        }
-      }
-      if (a == 1 && apple[0][0] == apple[1][0] && apple[0][1] == apple[1][1]) {
+void determineAppleCount() {
+  if (gameMode == 2) activeApples = 2;
+  else if (gameMode == 4) activeApples = c;
+  else if (gameMode == 5) activeApples = random(1, 7);
+  else activeApples = 1;
+  
+  if (activeApples > 6) activeApples = 6;
+}
+
+void spawnSingleApple(int a) {
+  bool onBody;
+  do {
+    onBody = false;
+    apple[a][0] = random(0, 12); 
+    apple[a][1] = random(0, 8);
+    
+    for (int i = 0; i < length; i++) {
+      if (body[i][0] == apple[a][0] && body[i][1] == apple[a][1]) {
         onBody = true;
+        break;
       }
-    } while (onBody == true);
+    }
+    for (int i = 0; i < activeApples; i++) {
+      if (i != a && apple[i][0] == apple[a][0] && apple[i][1] == apple[a][1]) {
+        onBody = true;
+        break;
+      }
+    }
+  } while (onBody == true);
+}
+
+void spawnAllApples() {
+  for (int a = 0; a < activeApples; a++) {
+    spawnSingleApple(a);
   }
 }
 
@@ -84,11 +103,12 @@ void resetGame() {
   body[1][0] = 2; body[1][1] = 4; 
   body[2][0] = 1; body[2][1] = 4; 
   
-  spawnApple();
+  determineAppleCount();
+  spawnAllApples();
   
   clear();
   for (int i = 0; i < length; i++) writePixel(body[i][0], body[i][1], 1);
-  for (int a = 0; a < (gameMode == 2 ? 2 : 1); a++) writePixel(apple[a][0], apple[a][1], 1);
+  for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
   refreshMatrix(); 
 }
 
@@ -148,8 +168,12 @@ void loop() {
     }
 
     int eatenApple = -1;
-    if (body[0][0] == apple[0][0] && body[0][1] == apple[0][1]) eatenApple = 0;
-    else if (gameMode == 2 && body[0][0] == apple[1][0] && body[0][1] == apple[1][1]) eatenApple = 1;
+    for (int a = 0; a < activeApples; a++) {
+      if (body[0][0] == apple[a][0] && body[0][1] == apple[a][1]) {
+        eatenApple = a;
+        break;
+      }
+    }
 
     if (eatenApple != -1) {
       if (gameMode == 2) {
@@ -180,13 +204,18 @@ void loop() {
         else if (dy == 1 || dy == -7) { dir = 1; nextDir = 1; }
         else if (dy == -1 || dy == 7) { dir = 0; nextDir = 0; }
       }
-
-      spawnApple(); 
+      
+      if (gameMode == 5) {
+        determineAppleCount();
+        spawnAllApples();
+      } else {
+        spawnSingleApple(eatenApple);
+      }
     }
 
     clear();
     for (int i = 0; i < length; i++) writePixel(body[i][0], body[i][1], 1);
-    for (int a = 0; a < (gameMode == 2 ? 2 : 1); a++) writePixel(apple[a][0], apple[a][1], 1);
+    for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
     refreshMatrix();
 
     lastMoveTime = millis(); 
