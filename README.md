@@ -11,6 +11,6 @@ Game modes: <br>
 // 6 - chese <br>
 // 7 - hot dog <br>
 
-credits:
-made by me
-made for stardance
+credits: <br>
+made by me <br>
+made for stardance <br>
