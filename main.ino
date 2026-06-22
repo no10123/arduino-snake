@@ -18,7 +18,7 @@ int dir = 3;
 int nextDir = 3; 
 int length = 3;
 
-int gameMode = 6;
+int gameMode = 8;
 // 0 - none
 // 1 - no warp
 // 2 - teleport
@@ -27,10 +27,12 @@ int gameMode = 6;
 // 5 - 1d6 apples
 // 6 - chese
 // 7 - hot dog
+// 8 - hidden apples (they pulse)
 
 const int c = 5;
 int apple[6][2]; 
 int activeApples = 1;
+unsigned long appleSpawnTime[6];
 
 void refreshMatrix() {
   uint32_t renderBuffer[3] = {0, 0, 0};
@@ -103,6 +105,7 @@ void spawnSingleApple(int a) {
         break;
       }
     }
+    appleSpawnTime[a] = millis();
   } while (onBody == true);
 }
 
@@ -110,6 +113,7 @@ void spawnAllApples() {
   for (int a = 0; a < activeApples; a++) {
     spawnSingleApple(a);
   }
+  for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
 }
 
 void drawGame() {
@@ -133,7 +137,15 @@ void drawGame() {
       }
     }
   }
-  for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
+  if (gameMode == 8) {
+    for (int a = 0; a < activeApples; a++) {
+      if (millis() - appleSpawnTime[a] < 1000) { 
+        writePixel(apple[a][0], apple[a][1], 1);
+      }
+    }
+  } else {
+    for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
+  }
   refreshMatrix();
 }
 
