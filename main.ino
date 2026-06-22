@@ -1,11 +1,12 @@
 #include "Arduino_LED_Matrix.h"
 #define MAX_LENGTH 96
-
+#include <cmath>
 ArduinoLEDMatrix matrix;
 
 byte frame[8][12] = {0};
 
-unsigned long lastMoveTime = 0; 
+unsigned long lastMoveTime = 0;
+const int gameSpeed = 250; // low is faster
 
 int body[MAX_LENGTH][2]; 
 const int btnUp = 3;
@@ -17,7 +18,7 @@ int dir = 3;
 int nextDir = 3; 
 int length = 3;
 
-int gameMode = 4;
+int gameMode = 6;
 // 0 - none
 // 1 - no warp
 // 2 - teleport
@@ -26,7 +27,6 @@ int gameMode = 4;
 // 5 - 1d6 apples
 // 6 - chese
 // 7 - hot dog
-const int gameSpeed = 250; // less is faster
 
 const int c = 5;
 int apple[6][2]; 
@@ -74,11 +74,29 @@ void spawnSingleApple(int a) {
     apple[a][1] = random(0, 8);
     
     for (int i = 0; i < length; i++) {
+      if (gameMode == 6 &&  i > 0 && ((body[i][0] + body[i][1]) % 2 != 0)) continue;
+
       if (body[i][0] == apple[a][0] && body[i][1] == apple[a][1]) {
         onBody = true;
         break;
       }
+
+      if (gameMode == 7 && i > 0) {
+        int px = body[i][0], py = body[i][1];
+        int prevX = body[i - 1][0], prevY = body[i - 1][1];
+        int dx = abs(prevX - px), dy = abs(prevY - py);
+        
+        int b1x = px, b1y = py, b2x = px, b2y = py;
+        if (dx == 1 || dx == 11) { b1y = (py + 1) % 8; b2y = (py + 7) % 8; }
+        else if (dy == 1 || dy == 7) { b1x = (px + 1) % 12; b2x = (px + 11) % 12; }
+        
+        if ((apple[a][0] == b1x && apple[a][1] == b1y) || (apple[a][0] == b2x && apple[a][1] == b2y)) {
+          onBody = true;
+          break;
+        }
+      }
     }
+    
     for (int i = 0; i < activeApples; i++) {
       if (i != a && apple[i][0] == apple[a][0] && apple[i][1] == apple[a][1]) {
         onBody = true;
@@ -94,6 +112,31 @@ void spawnAllApples() {
   }
 }
 
+void drawGame() {
+  clear();
+  for (int i = 0; i < length; i++) {
+    if (gameMode == 6 &&  i > 0 && ((body[i][0] + body[i][1]) % 2 != 0)) continue;
+    
+    writePixel(body[i][0], body[i][1], 1);
+    
+    if (gameMode == 7 && i > 0) {
+      int px = body[i][0], py = body[i][1];
+      int prevX = body[i - 1][0], prevY = body[i - 1][1];
+      int dx = abs(prevX - px), dy = abs(prevY - py);
+      
+      if (dx == 1 || dx == 11) {
+        writePixel(px, (py + 1) % 8, 1);
+        writePixel(px, (py + 7) % 8, 1);
+      } else if (dy == 1 || dy == 7) {
+        writePixel((px + 1) % 12, py, 1);
+        writePixel((px + 11) % 12, py, 1);
+      }
+    }
+  }
+  for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
+  refreshMatrix();
+}
+
 void resetGame() {
   length = 3;
   dir = 3;
@@ -105,11 +148,7 @@ void resetGame() {
   
   determineAppleCount();
   spawnAllApples();
-  
-  clear();
-  for (int i = 0; i < length; i++) writePixel(body[i][0], body[i][1], 1);
-  for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
-  refreshMatrix(); 
+  drawGame(); 
 }
 
 void setup() {
@@ -160,10 +199,28 @@ void loop() {
     body[0][1] = (newHeadY + 8) % 8;
 
     for (int i = 1; i < length; i++) {
+      if (gameMode == 6 && i > 0 && ((body[i][0] + body[i][1]) % 2 != 0)) continue;
+
       if (body[0][0] == body[i][0] && body[0][1] == body[i][1]) {
         delay(500);
         resetGame();
         return; 
+      }
+
+      if (gameMode == 7) {
+        int px = body[i][0], py = body[i][1];
+        int prevX = body[i - 1][0], prevY = body[i - 1][1];
+        int dx = abs(prevX - px), dy = abs(prevY - py);
+        
+        int b1x = px, b1y = py, b2x = px, b2y = py;
+        if (dx == 1 || dx == 11) { b1y = (py + 1) % 8; b2y = (py + 7) % 8; }
+        else if (dy == 1 || dy == 7) { b1x = (px + 1) % 12; b2x = (px + 11) % 12; }
+        
+        if ((body[0][0] == b1x && body[0][1] == b1y) || (body[0][0] == b2x && body[0][1] == b2y)) {
+          delay(500);
+          resetGame();
+          return;
+        }
       }
     }
 
@@ -213,11 +270,7 @@ void loop() {
       }
     }
 
-    clear();
-    for (int i = 0; i < length; i++) writePixel(body[i][0], body[i][1], 1);
-    for (int a = 0; a < activeApples; a++) writePixel(apple[a][0], apple[a][1], 1);
-    refreshMatrix();
-
+    drawGame();
     lastMoveTime = millis(); 
   }
 }
