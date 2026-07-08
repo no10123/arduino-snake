@@ -15,6 +15,9 @@ Game modes: <br>
 // 6 - chese <br>
 // 7 - hot dog <br>
 
+![IMG_6123.jpeg](IMG_6123.jpeg)
+![em.png](em.png)
+
 credits: <br>
 made by me <br>
 made for stardance <br>
