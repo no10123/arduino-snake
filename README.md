@@ -1,6 +1,10 @@
 Arduino snake
 a simple snake game i made to learn how the 8 x 12 led matrix worked.
 
+play it at - (https://wokwi.com/projects/468992108242590721)[https://wokwi.com/projects/468992108242590721]
+
+sometimes the emulator is slow to run, or can take a while, just wait and try to run it again.
+
 Game modes: <br>
 // 0 - none <br>
 // 1 - no warp <br>
